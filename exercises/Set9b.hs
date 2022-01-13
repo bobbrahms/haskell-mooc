@@ -47,10 +47,10 @@ type Col   = Int
 type Coord = (Row, Col)
 
 nextRow :: Coord -> Coord
-nextRow (i,j) = todo
+nextRow (i,j) = (i+1, 1)
 
 nextCol :: Coord -> Coord
-nextCol (i,j) = todo
+nextCol (i,j) = (i, j+1)
 
 --------------------------------------------------------------------------------
 -- Ex 2: Implement the function prettyPrint that, given the size of
@@ -99,8 +99,28 @@ nextCol (i,j) = todo
 -- of the width (or height) n of the chess board; the naïve solution with elem
 -- takes O(n^3) time. Just ignore the previous sentence, if you're not familiar
 -- with the O-notation.)
+
+
+
+-- prettyPrint :: Size -> [Coord] -> String
+-- prettyPrint = todo
+
+--board :: Int -> [[String]]
+--board n = take n repeat $ take n $ repeat ". "
+  
 prettyPrint :: Size -> [Coord] -> String
-prettyPrint = todo
+prettyPrint size queens =
+  concat (rowStrings size (qBoard size queens))
+  where
+    rowStrings :: Int -> [String] -> [String]
+    rowStrings size board = 
+      [concat (take size (drop (size*x) board)) ++ "\n" | x <- [0..(size-1)]]
+    qBoard :: Int -> [Coord] -> [String]
+    qBoard size queens =
+       [if a `elem` queens then "Q" else "." | a <- boardCoords]
+       where
+         boardCoords = [(x,y) | x <- [1..size], y <- [1..size]]
+
 
 --------------------------------------------------------------------------------
 -- Ex 3: The task in this exercise is to define the relations sameRow, sameCol,
@@ -124,16 +144,16 @@ prettyPrint = todo
 --   sameAntidiag (500,5) (5,500) ==> True
 
 sameRow :: Coord -> Coord -> Bool
-sameRow (i,j) (k,l) = todo
+sameRow (i,j) (k,l) = i == k
 
 sameCol :: Coord -> Coord -> Bool
-sameCol (i,j) (k,l) = todo
+sameCol (i,j) (k,l) = j == l
 
 sameDiag :: Coord -> Coord -> Bool
-sameDiag (i,j) (k,l) = todo
+sameDiag (i,j) (k,l) = k - i == l - j
 
 sameAntidiag :: Coord -> Coord -> Bool
-sameAntidiag (i,j) (k,l) = todo
+sameAntidiag (i,j) (k,l) = k - i == j - l
 
 --------------------------------------------------------------------------------
 -- Ex 4: In chess, a queen may capture another piece in the same row, column,
@@ -189,7 +209,14 @@ type Candidate = Coord
 type Stack     = [Coord]
 
 danger :: Candidate -> Stack -> Bool
-danger = todo
+danger pos [] = False
+danger pos (x:xs)
+  | sameRow pos x = True
+  | sameCol pos x = True
+  | sameDiag pos x = True
+  | sameAntidiag pos x = True
+  | otherwise = danger pos xs
+  
 
 --------------------------------------------------------------------------------
 -- Ex 5: In this exercise, the task is to write a modified version of
@@ -224,7 +251,21 @@ danger = todo
 -- solution to this version. Any working solution is okay in this exercise.)
 
 prettyPrint2 :: Size -> Stack -> String
-prettyPrint2 = todo
+prettyPrint2 size queens =
+  concat (rowStrings size (dangerBoard size queens))
+  where 
+    rowStrings :: Int -> [String] -> [String]
+    rowStrings size board = 
+      [concat (take size (drop (size*x) board)) ++ "\n" | x <- [0..(size-1)]]
+    dangerBoard :: Int -> Stack -> [String]
+    dangerBoard size queens =
+       [if a `elem` queens then "Q" else (indicateDanger a queens)
+           | a <- boardCoords]
+       where
+         boardCoords = [(x,y) | x <- [1..size], y <- [1..size]]
+    indicateDanger :: Coord -> Stack -> String
+    indicateDanger pos queens = if danger pos queens then "#" else "."
+  
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
@@ -253,6 +294,20 @@ prettyPrint2 = todo
 --   fixFirst 8 [(4,1),(3,4),(4,6)] ==> Nothing
 --   fixFirst 8 [(6,1),(3,4),(4,6)] ==> Just [(6,2),(3,4),(4,6)]
 --   fixFirst 8 [(5,1),(3,8),(4,6),(7,5),(6,2),(8,1)] ==> Nothing
+
+
+-- fixFirst 5 [(1,1)]
+-- fixFirst 5 [(3,4)]
+-- fixFirst 5 [(1,1),(1,5)]
+-- fixFirst 5 [(1,6)]
+-- fixFirst 5 [(1,1),(3,3)]
+-- fixFirst 5 [(1,3),(3,3)]
+-- fixFirst 5 [(2,1),(3,3)]
+-- fixFirst 8 [(8,1),(1,1)]
+-- fixFirst 8 [(4,1),(3,4),(4,6)]
+-- fixFirst 8 [(6,1),(3,4),(4,6)]
+-- fixFirst 8 [(5,1),(3,8),(4,6),(7,5),(6,2),(8,1)]
+
 --
 -- Hint: Remember prettyPrint and prettyPrint2? They might be useful
 -- for debugging. For example we can run this to see what's happening
@@ -269,7 +324,14 @@ prettyPrint2 = todo
 --     Q#######
 
 fixFirst :: Size -> Stack -> Maybe Stack
-fixFirst n s = todo
+fixFirst size queens
+  | x > size || y > size = Nothing
+  | danger queen others = fixFirst size ((nextCol queen) : others)
+  | otherwise = Just (queen:others)
+  where
+    queen = head queens
+    (x,y) = queen
+    others = tail queens
 
 --------------------------------------------------------------------------------
 -- Ex 7: We need two helper functions for stack management.
@@ -291,30 +353,16 @@ fixFirst n s = todo
 -- Hint: Remember nextRow and nextCol? Use them!
 
 continue :: Stack -> Stack
-continue s = todo
+continue ((x,y):xys) = (x+1, 1):(x,y):xys
 
 backtrack :: Stack -> Stack
-backtrack s = todo
+backtrack (_:(x,y):xs) = (x,y+1):xs
 
 --------------------------------------------------------------------------------
 -- Ex 8: Let's take a step. Our algorithm solves the problem (in a
 -- greedy manner) one row at a time, backtracking when needed. The
 -- reason why we need backtracking is the following. We can greedily
--- put the queens to (1,1) and (2,3) and end up with no safe spot on
--- the third row:
---
---   Q###
---   ##Q#
---   ####
---   #.##
---
--- However if we backtrack and move the queen from (2,3) to (2,4), we
--- are able to place the third queen:
---
---   Q###
---   ###Q
---   #.##
---   ##.#
+
 --
 -- Implement the function step that takes the size of a board and a
 -- stack, and tries to fix the position of the queen on the top of the
@@ -362,8 +410,25 @@ backtrack s = todo
 --     step 8 [(5,1),(4,2),(3,5),(2,3),(1,1)] ==> [(6,1),(5,4),(4,2),(3,5),(2,3),(1,1)]
 --     step 8 [(6,1),(5,4),(4,2),(3,5),(2,3),(1,1)] ==> [(5,5),(4,2),(3,5),(2,3),(1,1)]
 
+-- note: it was tricky to get this right. It would test OK here and then
+--   there would be problems in exercise 9, based on this.
+-- TODO tests examples need a bit of fleshing out.
+
 step :: Size -> Stack -> Stack
-step = todo
+step s (q:qs)
+  | outOfBounds s q = backtrack (q:qs)
+  | not (danger q qs) = continue (q:qs)
+  | fixFirst s (q:qs) == Nothing = backtrack (q:qs)
+  | otherwise = continue $ unjust (fixFirst s (q:qs))
+
+-- !!@bob I'm a bit of a haskell noob, so I'm not sure whether this
+--     is non-idiomatic. Kind of feels that way.
+unjust :: Maybe [a] -> [a]
+unjust Nothing = []
+unjust (Just things) = things
+
+outOfBounds :: Size -> Candidate -> Bool
+outOfBounds s (x,y) = (x>s) || (y>s)
 
 --------------------------------------------------------------------------------
 -- Ex 9: Let's solve our puzzle! The function finish takes a partial
@@ -378,7 +443,14 @@ step = todo
 -- solve the n queens problem.
 
 finish :: Size -> Stack -> Stack
-finish = todo
+finish n queens
+  | length (s:ss) == (n+1) = ss
+  | otherwise = finish n (s:ss)
+  where
+    (s:ss) = step n queens
 
 solve :: Size -> Stack
 solve n = finish n [(1,1)]
+
+
+

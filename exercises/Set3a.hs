@@ -28,7 +28,9 @@ import Data.List
 --  maxBy head   [1,2,3] [4,5]  ==>  [4,5]
 
 maxBy :: (a -> Int) -> a -> a -> a
-maxBy measure a b = todo
+maxBy measure a b = if (measure a) < (measure b)
+                    then b
+                    else a
 
 ------------------------------------------------------------------------------
 -- Ex 2: implement the function mapMaybe that takes a function and a
@@ -40,7 +42,9 @@ maxBy measure a b = todo
 --   mapMaybe length (Just "abc") ==> Just 3
 
 mapMaybe :: (a -> b) -> Maybe a -> Maybe b
-mapMaybe f x = todo
+mapMaybe f Nothing = Nothing
+mapMaybe f (Just x) = Just (f x)
+   
 
 ------------------------------------------------------------------------------
 -- Ex 3: implement the function mapMaybe2 that works like mapMaybe
@@ -54,7 +58,10 @@ mapMaybe f x = todo
 --   mapMaybe2 div (Just 6) Nothing   ==>  Nothing
 
 mapMaybe2 :: (a -> b -> c) -> Maybe a -> Maybe b -> Maybe c
-mapMaybe2 f x y = todo
+mapMaybe2 f Nothing _ = Nothing
+mapMaybe2 f _ Nothing = Nothing
+mapMaybe2 f (Just a) (Just b) = Just (f a b)
+
 
 ------------------------------------------------------------------------------
 -- Ex 4: define the functions firstHalf and palindrome so that
@@ -76,9 +83,9 @@ mapMaybe2 f x y = todo
 palindromeHalfs :: [String] -> [String]
 palindromeHalfs xs = map firstHalf (filter palindrome xs)
 
-firstHalf = todo
+firstHalf s = take (length s - (div (length s) 2)) s
 
-palindrome = todo
+palindrome s = s == reverse s
 
 ------------------------------------------------------------------------------
 -- Ex 5: Implement a function capitalize that takes in a string and
@@ -96,7 +103,10 @@ palindrome = todo
 --   capitalize "goodbye cruel world" ==> "Goodbye Cruel World"
 
 capitalize :: String -> String
-capitalize = todo
+capitalize s = unwords $ map capitalizeFirst (words s)
+
+capitalizeFirst :: String -> String
+capitalizeFirst s = (toUpper (head s)) : (tail s)
 
 ------------------------------------------------------------------------------
 -- Ex 6: powers k max should return all the powers of k that are less
@@ -113,7 +123,12 @@ capitalize = todo
 --   * the function takeWhile
 
 powers :: Int -> Int -> [Int]
-powers k max = todo
+powers k max = takeWhile (<= max) (allPowers k)
+
+allPowers :: Int -> [Int]
+allPowers x =
+  let y = x : map (*x) y
+  in 1:y
 
 ------------------------------------------------------------------------------
 -- Ex 7: implement a functional while loop. While should be a function
@@ -136,7 +151,10 @@ powers k max = todo
 --     ==> Avvt
 
 while :: (a->Bool) -> (a->a) -> a -> a
-while check update value = todo
+while check update value =
+  if not (check value)
+  then value
+  else while check update (update value)
 
 ------------------------------------------------------------------------------
 -- Ex 8: another version of a while loop. This time, the check
@@ -153,14 +171,24 @@ while check update value = todo
 --   whileRight (step 1000) 3  ==> 1536
 
 whileRight :: (a -> Either b a) -> a -> b
-whileRight f x = todo
+whileRight f x = rumples e
+  where
+    e = f x
+    rumples (Left x) = x
+    rumples (Right y) = whileRight f y
+
+-- this doesn't work...
+--whileRight f x
+-- | rux (Left x) = x
+-- | rux (Right y) = whileRight f y  
+-- where
+--   rux e = rux (f x)
 
 -- for the whileRight examples:
 -- step k x doubles x if it's less than k
 step :: Int -> Int -> Either Int Int
 step k x = if x<k then Right (2*x) else Left x
 
-------------------------------------------------------------------------------
 -- Ex 9: given a list of strings and a length, return all strings that
 --  * have the given length
 --  * are made by catenating two input strings
@@ -172,7 +200,14 @@ step k x = if x<k then Right (2*x) else Left x
 -- Hint! This is a great use for list comprehensions
 
 joinToLength :: Int -> [String] -> [String]
-joinToLength = todo
+-- works
+-- joinToLength n strs = filter (\m -> length m == n) (cartprod strs)
+--   cartprod = [ x ++ y | x <- strs , y <- strs]
+-- works
+--joinToLength n strs = [ b | x <- strs , y <- strs, let b = x ++ y, length b == n]
+-- works
+joinToLength n strs = filter (\m -> length m == n) [ x ++ y | x <- strs , y <- strs]
+
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the operator +|+ that returns a list with the first
@@ -186,9 +221,14 @@ joinToLength = todo
 --   [] +|+ [True]        ==> [True]
 --   [] +|+ []            ==> []
 
+(+|+) :: [a] -> [a] -> [a]
+[] +|+ [] = []
+[] +|+ (y:ys) = [y]
+(x:xs) +|+ [] = [x]
+(x:xs) +|+ (y:ys) = x:[y]
 
 ------------------------------------------------------------------------------
--- Ex 11: remember the lectureParticipants example from Lecture 2? We
+  -- Ex 11: remember the lectureParticipants example from Lecture 2? We
 -- used a value of type [Either String Int] to store some measurements
 -- that might be missing. Implement the function sumRights which sums
 -- all non-missing measurements in a list like this.
@@ -202,7 +242,10 @@ joinToLength = todo
 --   sumRights [Left "bad!", Left "missing"]         ==>  0
 
 sumRights :: [Either a Int] -> Int
-sumRights = todo
+sumRights [] = 0
+sumRights (Left a:es) = sumRights es
+sumRights (Right b:es) = b + (sumRights es)
+
 
 ------------------------------------------------------------------------------
 -- Ex 12: recall the binary function composition operation
@@ -218,7 +261,12 @@ sumRights = todo
 --   multiCompose [(3*), (2^), (+1)] 0 ==> 6
 --   multiCompose [(+1), (2^), (3*)] 0 ==> 2
 
-multiCompose fs = todo
+multiCompose :: [ a -> a ] -> a -> a
+multiCompose [] x = x
+multiCompose [f] x = (f x)
+multiCompose fs x = multiCompose (init fs) ((last fs) x)
+
+
 
 ------------------------------------------------------------------------------
 -- Ex 13: let's consider another way to compose multiple functions. Given
@@ -239,7 +287,15 @@ multiCompose fs = todo
 --   multiApp id [head, (!!2), last] "axbxc" ==> ['a','b','c'] i.e. "abc"
 --   multiApp sum [head, (!!2), last] [1,9,2,9,3] ==> 6
 
-multiApp = todo
+
+multiApp :: ([b] -> c) -> [a -> b] -> a -> c
+multiApp f gs x = f (multiApply gs x) --[ [g x] | g <- gs]
+
+multiApply :: [a -> b] -> a -> [b]
+multiApply fs x = [(f x) | f <- fs]
+
+
+
 
 ------------------------------------------------------------------------------
 -- Ex 14: in this exercise you get to implement an interpreter for a
@@ -274,4 +330,15 @@ multiApp = todo
 -- function, the surprise won't work.
 
 interpreter :: [String] -> [String]
-interpreter commands = todo
+--interpreter commands = todo
+
+interpreter commands = interpret commands 0 0 []
+  where
+    interpret [] _ _ output = output
+    interpret ("up":rest) x y output = interpret rest x (y+1) output
+    interpret ("down":rest) x y output = interpret rest x (y-1) output
+    interpret ("left":rest) x y output = interpret rest (x-1) y output
+    interpret ("right":rest) x y output = interpret rest (x+1) y output
+    interpret ("printX":rest) x y output = interpret rest x y (output ++ [show x])
+    interpret ("printY":rest) x y output = interpret rest x y (output ++ [show y])
+

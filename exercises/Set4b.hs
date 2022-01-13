@@ -3,7 +3,7 @@
 module Set4b where
 
 import Mooc.Todo
-
+import Debug.Trace
 ------------------------------------------------------------------------------
 -- Ex 1: countNothings with a fold. The function countNothings from
 -- the course material can be implemented using foldr. Your task is to
@@ -21,7 +21,13 @@ import Mooc.Todo
 countNothings :: [Maybe a] -> Int
 countNothings xs = foldr countHelper 0 xs
 
-countHelper = todo
+-- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+-- countHelper's second arg is the accumulator
+
+countHelper :: Maybe a -> Int -> Int
+countHelper Nothing i = i + 1
+countHelper _ i = i
+
 
 ------------------------------------------------------------------------------
 -- Ex 2: myMaximum with a fold. Just like in the previous exercise,
@@ -35,7 +41,12 @@ myMaximum :: [Int] -> Int
 myMaximum [] = 0
 myMaximum (x:xs) = foldr maxHelper x xs
 
-maxHelper = todo
+-- maxHelper :: Int -> Int -> Int
+-- maxHelper a b
+--  | a >= b = a
+--  | otherwise = b
+-- or we could just:
+maxHelper = max
 
 ------------------------------------------------------------------------------
 -- Ex 3: compute the sum and length of a list with a fold. Define
@@ -52,8 +63,9 @@ maxHelper = todo
 sumAndLength :: [Double] -> (Double,Int)
 sumAndLength xs = foldr slHelper slStart xs
 
-slStart = todo
-slHelper = todo
+slStart = (0.0, 0)
+slHelper :: Double -> (Double, Int) -> (Double, Int)
+slHelper d (s, len) = (s + d, len + 1)
 
 ------------------------------------------------------------------------------
 -- Ex 4: implement concat with a fold. Define concatHelper and
@@ -67,8 +79,18 @@ slHelper = todo
 myConcat :: [[a]] -> [a]
 myConcat xs = foldr concatHelper concatStart xs
 
-concatStart = todo
-concatHelper = todo
+-- !!@ bob why does this work and not stack them backwards?
+-- concatHelper's second argument should be the accumulator right?
+--   As in countNothings above?
+
+-- But it's acting here like the first arg is the accumulator. 
+-- We have [], and each step adds its contribution to the end
+-- why then is it xs ++ accum and not accum ++ xs?
+concatStart = []
+concatHelper :: [a] -> [a] -> [a]
+concatHelper [] accum = accum
+concatHelper xs accum = xs ++ accum 
+
 
 ------------------------------------------------------------------------------
 -- Ex 5: get all occurrences of the largest number in a list with a
@@ -82,8 +104,12 @@ concatHelper = todo
 largest :: [Int] -> [Int]
 largest xs = foldr largestHelper [] xs
 
-largestHelper = todo
-
+largestHelper :: Int -> [Int] -> [Int]
+largestHelper x [] = [x]
+largestHelper x accum
+  | x > (head accum) = [x]
+  | x == (head accum) = accum ++ [x]
+  | otherwise = accum
 
 ------------------------------------------------------------------------------
 -- Ex 6: get the first element of a list with a fold. Define
@@ -98,7 +124,11 @@ largestHelper = todo
 myHead :: [a] -> Maybe a
 myHead xs = foldr headHelper Nothing xs
 
-headHelper = todo
+headHelper ::  a -> Maybe a -> Maybe a
+-- !!@ bob no idea why this doesn't keep calling the helper. 
+headHelper x _ = trace ("hey") Just x
+-- !!@ no idea why this one chooses the last thing in the list
+--headHelper _ (Just x) = trace ("hey") Just x
 
 ------------------------------------------------------------------------------
 -- Ex 7: get the last element of a list with a fold. Define lasthelper
@@ -113,5 +143,12 @@ headHelper = todo
 myLast :: [a] -> Maybe a
 myLast xs = foldr lastHelper Nothing xs
 
-lastHelper = todo
+--lastHelper = todo
+lastHelper :: a -> Maybe a -> Maybe a
+lastHelper x Nothing = Just x
+lastHelper _ accum = accum
+
+-- myHead :: [a] -> Maybe a
+-- myHead xs = foldr headHelper Nothing xs
+
 
