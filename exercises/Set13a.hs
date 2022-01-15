@@ -45,19 +45,35 @@ readNames s =
 -- (NB! There are obviously other corner cases like the inputs " " and
 -- "a b c", but you don't need to worry about those here)
 split :: String -> Maybe (String,String)
-split = todo
+split s
+  | length (words s) <= 1 = Nothing
+  | otherwise = Just (s1::String, s2::String )
+      where s1 = ws !! 0
+            s2 = ws !! 1
+            ws = words s
 
 -- checkNumber should take a pair of two strings and return them
 -- unchanged if they don't contain numbers. Otherwise Nothing is
 -- returned.
 checkNumber :: (String, String) -> Maybe (String, String)
-checkNumber = todo
+checkNumber (s1, s2)
+  | hasNumber s1 = Nothing
+  | hasNumber s2 = Nothing
+  | otherwise = Just (s1, s2)
+    where
+      hasNumber :: String -> Bool
+      hasNumber s = case dropWhile (not . isNumber) s of
+                      "" -> False
+                      _ -> True
 
 -- checkCapitals should take a pair of two strings and return them
 -- unchanged if both start with a capital letter. Otherwise Nothing is
 -- returned.
 checkCapitals :: (String, String) -> Maybe (String, String)
-checkCapitals (for,sur) = todo
+checkCapitals (for,sur)
+  | (not . isUpper) (for !! 0) = Nothing
+  | (not . isUpper) (sur !! 0) = Nothing
+  | otherwise = Just (for, sur)
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given a list of players and their scores (as [(String,Int)]),
@@ -84,7 +100,20 @@ checkCapitals (for,sur) = todo
 --     ==> Just "a"
 
 winner :: [(String,Int)] -> String -> String -> Maybe String
-winner scores player1 player2 = todo
+winner scores player1 player2 =
+  do
+    let s1 = lookup player1 scores
+    let s2 = lookup player2 scores
+    select (player1, s1) (player2, s2)
+  where
+    select :: (String, (Maybe Int)) -> (String, (Maybe Int)) -> (Maybe String)
+    select (_,Nothing) _ = Nothing
+    select _ (_,Nothing) = Nothing
+    select (n1, Just a) (n2, Just b) =
+      if (max a b) == a
+      then Just n1
+      else Just n2
+
 
 ------------------------------------------------------------------------------
 -- Ex 3: given a list of indices and a list of values, return the sum
@@ -102,7 +131,16 @@ winner scores player1 player2 = todo
 --    Nothing
 
 selectSum :: Num a => [a] -> [Int] -> Maybe a
-selectSum xs is = todo
+selectSum items idxs =
+  fmap sum $ sequence jints
+    where
+      jints = map (safeIndex items) idxs
+
+safeIndex :: [a] -> Int -> Maybe a
+safeIndex items idx
+  | idx >= length items = Nothing
+  | otherwise = Just (items !! idx)
+
 
 ------------------------------------------------------------------------------
 -- Ex 4: Here is the Logger monad from the course material. Implement
