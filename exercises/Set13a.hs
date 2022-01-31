@@ -304,9 +304,6 @@ parensMatch s = count == 0
 --
 -- PS. The order of the list of pairs doesn't matter
 
--- do a different one that does not require insertWith,
--- because it wants Ord.
--- 
 
 incKeyCount :: (Eq a) => a -> [(a, Int)] -> [(a, Int)]
 incKeyCount k [] = [(k,1)]
