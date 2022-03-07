@@ -400,4 +400,14 @@ instance Monad SL where
 --  4
 
 mkCounter :: IO (IO (), IO Int)
-mkCounter = todo
+mkCounter = do
+  r <- newIORef 0
+  let
+    inc :: IO ()
+    inc = do
+      v <- readIORef r
+      writeIORef r (v + 1)
+    get :: IO Int
+    get = do
+      readIORef r
+  return (inc, get)

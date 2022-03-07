@@ -27,8 +27,13 @@ import qualified Data.ByteString.Lazy as BL
 --  greetText (T.pack "Martin Freeman") ==> "Hello, Martin Freeman!"
 --  greetText (T.pack "Benedict Cumberbatch") ==> "Hello, Benedict Cumber...!"
 
+-- !!@ bob reduce this
 greetText :: T.Text -> T.Text
-greetText = todo
+greetText txt
+  | T.length txt > 15 =
+    (T.pack("Hello, ")) <> (T.take 15 txt) <> (T.pack ("...!"))
+  | otherwise =
+    (T.pack("Hello, ")) <> txt <> T.pack("!")
 
 ------------------------------------------------------------------------------
 -- Ex 2: Capitalize every second word of a Text.
@@ -39,8 +44,25 @@ greetText = todo
 --   shout (T.pack "word")
 --     ==> "WORD"
 
+
+-- !!@bob works. is there a nicer way?
 shout :: T.Text -> T.Text
-shout = todo
+shout wordString =
+  T.dropEnd 1 (T.concat [ ((snd e) <> T.pack " ")  | e <- modItems])
+  where
+    items = zip [0..] (T.words wordString)
+    modItems = capEvens items
+
+capEvens :: (Num a, Enum a, Integral a) => [(a, T.Text)] -> [(a, T.Text)]
+capEvens [] = []
+capEvens [(i, s)]
+  | (mod i 2) == 0 = (i, (T.toUpper s)):[]
+  | otherwise = (i, s):[]
+capEvens ((i, s):xs)
+  | mod i 2 == 0 = (i, (T.toUpper s)) : capEvens xs
+  | otherwise = (i, s) : capEvens xs
+
+
 
 ------------------------------------------------------------------------------
 -- Ex 3: Find the longest sequence of a single character repeating in
